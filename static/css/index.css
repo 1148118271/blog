@@ -1,0 +1,54 @@
+html {
+    height: 100%;
+}
+
+body {
+    color: black;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-wrap: break-word;
+}
+
+main {
+    max-width: 740px;
+    margin:5% auto;
+}
+
+.content a {
+    color: #dc1313;
+}
+
+li {
+    margin: 0.7rem 0;
+}
+
+
+footer {
+    text-align: center;
+    margin-top: 7rem;
+}
+
+.footer-svg a {
+    text-decoration: none;
+}
+
+.footer-filing a {
+    color: darkred;
+    text-decoration: underline
+}
+
+.post-title {
+    margin-bottom: 1rem;
+}
+
+code {
+    border-radius: 0.7rem;
+}
+
+img {
+    width: 100%;
+}
+
+.del a {
+    margin-left: 1rem;
+}
