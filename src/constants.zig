@@ -1,5 +1,5 @@
-pub const IP: []const u8 = "127.0.0.1";
-pub const PORT = 9998;
+pub const IP: []const u8 = "0.0.0.0";
+pub const PORT = 9999;
 
 // 静态目录
 pub const STATIC_FILE = "/static/";
