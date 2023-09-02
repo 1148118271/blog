@@ -104,42 +104,52 @@ const Response = struct {
     fn getRoute(res: *Response) !void {
         // 首页
         if (res.match("/")) {
-            const html = try Utils.readToBytes("templates/index.html", .{});
-            defer allocator.free(html);
-            try res.toHtml(html);
-            return;
+            const html = Utils.readToBytes("templates/index.html", .{});
+            if (html != null) {
+                defer allocator.free(html.?);
+                try res.toHtml(html.?);
+                return;
+            }
         }
 
         // 所有帖子页面
         if (res.match("/post")) {
-            const html = try Utils.readToBytes("templates/postAll.html", .{});
-            defer allocator.free(html);
-            try res.toHtml(html);
-            return;
+            const html = Utils.readToBytes("templates/postAll.html", .{});
+            if (html != null) {
+                defer allocator.free(html.?);
+                try res.toHtml(html.?);
+                return;
+            }
         }
 
         // 关于
         if (res.match("/about")) {
-            const html = try Utils.readToBytes("templates/about.html", .{});
-            defer allocator.free(html);
-            try res.toHtml(html);
-            return;
+            const html = Utils.readToBytes("templates/about.html", .{});
+            if (html != null) {
+                defer allocator.free(html.?);
+                try res.toHtml(html.?);
+                return;
+            }
         }
 
         // 友链
         if (res.match("/friends")) {
-            const html = try Utils.readToBytes("templates/friends.html", .{});
-            defer allocator.free(html);
-            try res.toHtml(html);
-            return;
+            const html = Utils.readToBytes("templates/friends.html", .{});
+            if (html != null) {
+                defer allocator.free(html.?);
+                try res.toHtml(html.?);
+                return;
+            }
         }
 
         // 帖子
         if (res.match("/post/*")) {
-            const html = try Utils.readToBytes("templates/post.html", .{});
-            defer allocator.free(html);
-            try res.toHtml(html);
-            return;
+            const html = Utils.readToBytes("templates/post.html", .{});
+            if (html != null) {
+                defer allocator.free(html.?);
+                try res.toHtml(html.?);
+                return;
+            }
         }
 
         try res.toJson("error.");
@@ -164,18 +174,22 @@ const Response = struct {
 
         // 关于
         if (res.match("/getAbout")) {
-            const about = try Utils.readToBytes("data/about.md", .{});
-            defer allocator.free(about);
-            try res.toJson(about);
-            return;
+            const json = Utils.readToBytes("data/about.md", .{});
+            if (json != null) {
+                defer allocator.free(json.?);
+                try res.toJson(json.?);
+                return;
+            }
         }
 
         // 友链
         if (res.match("/getFriends")) {
-            const friends = try Utils.readToBytes("data/friends.md", .{});
-            defer allocator.free(friends);
-            try res.toJson(friends);
-            return;
+            const json = Utils.readToBytes("data/friends.md", .{});
+            if (json != null) {
+                defer allocator.free(json.?);
+                try res.toJson(json.?);
+                return;
+            }
         }
 
         // 帖子详情
@@ -194,10 +208,12 @@ const Response = struct {
             }
             const path = try std.mem.concat(allocator, u8, &[_][]const u8{ "data/", di.value.fileName.? });
             defer allocator.free(path);
-            const json = try Utils.readToBytes(path, .{});
-            defer allocator.free(json);
-            try res.toJson(json);
-            return;
+            const json = Utils.readToBytes(path, .{});
+            if (json != null) {
+                defer allocator.free(json.?);
+                try res.toJson(json.?);
+                return;
+            }
         }
 
         try res.toJson("error.");
@@ -211,9 +227,12 @@ const Response = struct {
         if (ct == null) {
             return false;
         }
-        var bytes = try Utils.readToBytes("static/favicon.ico", .{});
-        defer allocator.free(bytes);
-        try res.response(bytes, ct.?);
+        var bytes = Utils.readToBytes("static/favicon.ico", .{});
+        if (bytes == null) {
+            return false;
+        }
+        defer allocator.free(bytes.?);
+        try res.response(bytes.?, ct.?);
         return true;
     }
 
@@ -228,9 +247,12 @@ const Response = struct {
         if (ct == null) {
             return false;
         }
-        var bytes = try Utils.readToBytes(res.path[1..], .{});
-        defer allocator.free(bytes);
-        try res.response(bytes, ct.?);
+        var bytes = Utils.readToBytes(res.path[1..], .{});
+        if (bytes == null) {
+            return false;
+        }
+        defer allocator.free(bytes.?);
+        try res.response(bytes.?, ct.?);
         return true;
     }
 
@@ -289,15 +311,15 @@ pub const Detail = struct {
 
 pub const Posts = struct {
     pub fn initTop() []const u8 {
-        var postJson = Utils.readToBytes("data/index.z", .{}) catch |e| {
-            log.err("read file data/index.z err, err info: {}", .{e});
+        var postJson = Utils.readToBytes("data/index.z", .{});
+        if (postJson == null) {
             return "[]";
-        };
-        defer allocator.free(postJson);
+        }
+        defer allocator.free(postJson.?);
         var newJson = ArrayList(u8).init(allocator);
         defer newJson.deinit();
         var count: u4 = 0;
-        for (postJson) |v| {
+        for (postJson.?) |v| {
             newJson.append(v) catch |e| {
                 log.err("posts append err, err info: {}", .{e});
                 continue;
@@ -325,11 +347,11 @@ pub const Posts = struct {
     }
 
     pub fn posts() []const u8 {
-        var postJson = Utils.readToBytes("data/index.z", .{}) catch |e| {
-            log.err("read file data/index.z err, err info: {}", .{e});
+        var postJson = Utils.readToBytes("data/index.z", .{});
+        if (postJson == null) {
             return "[]";
-        };
-        return postJson;
+        }
+        return postJson.?;
     }
 };
 
@@ -339,27 +361,36 @@ const Utils = struct {
         return std.mem.eql(u8, s1, s2);
     }
 
-    fn readToBytes(path: []const u8, flags: fs.File.OpenFlags) ![]const u8 {
+    fn readToBytes(path: []const u8, flags: fs.File.OpenFlags) ?[]const u8 {
         var file = fs.cwd().openFile(path, flags) catch |e| {
-            log.err("read file error: {}", .{e});
-            const errMsg = std.fmt.allocPrint(allocator, "error: {}", .{e}) catch {
-                return "err";
-            };
-            defer allocator.free(errMsg);
-            return errMsg;
+            log.err("open file error: {}", .{e});
+            return null;
         };
-        defer file.close();
-        try file.seekTo(0);
+        errdefer file.close();
+        file.seekTo(0) catch |e| {
+            log.err("file seekTo error: {}", .{e});
+            return null;
+        };
         var buf: [512]u8 = undefined;
         var bufArray = ArrayList(u8).init(allocator);
         errdefer bufArray.deinit();
         while (true) {
-            var size = try file.read(&buf);
+            var size = file.read(&buf) catch |e| {
+                log.err("read file error: {}", .{e});
+                return null;
+            };
             if (size == 0) {
                 break;
             }
-            try bufArray.appendSlice(buf[0..size]);
+            bufArray.appendSlice(buf[0..size]) catch |e| {
+                log.err("appendSlice error: {}", .{e});
+                return null;
+            };
         }
-        return bufArray.toOwnedSlice();
+        var bytes = bufArray.toOwnedSlice() catch |e| {
+            log.err("toOwnedSlice error: {}", .{e});
+            return null;
+        };
+        return bytes;
     }
 };
