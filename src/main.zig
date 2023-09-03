@@ -1,4 +1,5 @@
 const std = @import("std");
+const dateTime = @import("datetime").Datetime;
 const constants = @import("./constants.zig");
 const contentType = @import("./contentType.zig");
 const log = std.log;
@@ -11,25 +12,34 @@ const Method = http.Method;
 
 pub fn main() void {
     var server = Server.init(constants.IP, constants.PORT) catch |err| {
-        log.err("server init err {}", .{err});
+        const dt = Utils.getDate();
+        defer allocator.free(dt);
+        log.err("{s} => server init err {}", .{ dt, err });
         return;
     };
     defer server.deinit();
     while (true) {
         var res = server.croe.accept(.{ .allocator = allocator }) catch |err| {
-            log.err("accept err {}", .{err});
+            const dt = Utils.getDate();
+            defer allocator.free(dt);
+            log.err("{s} => accept err {}", .{ dt, err });
             continue;
         };
         res.wait() catch |err| {
-            log.err("wait err {}", .{err});
+            const dt = Utils.getDate();
+            defer allocator.free(dt);
+            log.err("{s} => wait err {}", .{ dt, err });
             res.deinit();
             continue;
         };
         var response = Response.init(&res);
         response.route() catch |err| {
-            log.err("route err {}", .{err});
+            const dt = Utils.getDate();
+            defer allocator.free(dt);
+            log.err("{s} => route err {}", .{ dt, err });
             response.toJson("error") catch |e| {
-                log.err("toJson err {}", .{e});
+                defer allocator.free(dt);
+                log.err("{s} => toJson err {}", .{ dt, e });
                 response.deinit();
                 continue;
             };
@@ -47,7 +57,9 @@ pub const Server = struct {
         var server = http.Server.init(allocator, .{});
         const addr = try net.Address.parseIp(ip, port);
         try server.listen(addr);
-        log.info("listen {}", .{addr});
+        const dt = Utils.getDate();
+        defer allocator.free(dt);
+        log.info("{s} => listen {}", .{ dt, addr });
         return .{
             .croe = server,
         };
@@ -76,7 +88,9 @@ const Response = struct {
 
     // 路由
     pub fn route(res: *Response) !void {
-        log.info("request => {any} - {s}", .{ res.heart.request.method, res.path });
+        const dt = Utils.getDate();
+        defer allocator.free(dt);
+        log.info("{s} => request => {any} - {s}", .{ dt, res.heart.request.method, res.path });
 
         // favicon.ico
         if (try res.toIco()) {
@@ -293,11 +307,15 @@ const Response = struct {
             return null;
         }
         const buf = allocator.alloc(u8, len.?) catch |err| {
-            log.err("{}", .{err});
+            const dt = Utils.getDate();
+            defer allocator.free(dt);
+            log.err("{s} => {}", .{ dt, err });
             return null;
         };
         _ = res.heart.readAll(buf) catch |err| {
-            log.err("{}", .{err});
+            const dt = Utils.getDate();
+            defer allocator.free(dt);
+            log.err("{s} => {}", .{ dt, err });
             allocator.free(buf);
             return null;
         };
@@ -321,7 +339,9 @@ pub const Posts = struct {
         var count: u4 = 0;
         for (postJson.?) |v| {
             newJson.append(v) catch |e| {
-                log.err("posts append err, err info: {}", .{e});
+                const dt = Utils.getDate();
+                defer allocator.free(dt);
+                log.err("{s} => posts append err, err info: {}", .{ dt, e });
                 continue;
             };
             if (v == '\n') {
@@ -333,11 +353,15 @@ pub const Posts = struct {
         }
         if (newJson.getLast() != ']') {
             newJson.append(']') catch |e| {
-                log.err("posts append err, err info: {}", .{e});
+                const dt = Utils.getDate();
+                defer allocator.free(dt);
+                log.err("{s} => posts append err, err info: {}", .{ dt, e });
             };
         }
         var nj = newJson.toOwnedSlice() catch |e| {
-            log.err("toOwnedSlice err, err info: {}", .{e});
+            const dt = Utils.getDate();
+            defer allocator.free(dt);
+            log.err("{s} => toOwnedSlice err, err info: {}", .{ dt, e });
             return "[]";
         };
         if (nj[nj.len - 4] == ',') {
@@ -366,14 +390,14 @@ const Utils = struct {
             log.err("open file error: {}", .{e});
             return null;
         };
-        errdefer file.close();
+        defer file.close();
         file.seekTo(0) catch |e| {
             log.err("file seekTo error: {}", .{e});
             return null;
         };
         var buf: [512]u8 = undefined;
         var bufArray = ArrayList(u8).init(allocator);
-        errdefer bufArray.deinit();
+        defer bufArray.deinit();
         while (true) {
             var size = file.read(&buf) catch |e| {
                 log.err("read file error: {}", .{e});
@@ -392,5 +416,12 @@ const Utils = struct {
             return null;
         };
         return bytes;
+    }
+
+    fn getDate() []const u8 {
+        var dt = dateTime.nowGMT8().formatStr(allocator) catch {
+            return "-";
+        };
+        return dt;
     }
 };
