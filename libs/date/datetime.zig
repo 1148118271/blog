@@ -1361,7 +1361,7 @@ pub const Datetime = struct {
     // ------------------------------------------------------------------------
 
     pub fn formatStr(self: Datetime, allocator: Allocator) ![]const u8 {
-        return try std.fmt.allocPrint(allocator, "{d}-{d}-{d} {d:0>2}:{d:0>2}:{d:0>2}", .{
+        return try std.fmt.allocPrint(allocator, "{d:0>4}-{d:0>2}-{d:0>2} {d:0>2}:{d:0>2}:{d:0>2}", .{
             self.date.year,
             self.date.month,
             self.date.day,
