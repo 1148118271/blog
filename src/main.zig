@@ -33,20 +33,13 @@ pub fn main() void {
             continue;
         };
         var response = Response.init(&res);
+        defer response.deinit();
         response.route() catch |err| {
             const dt = Utils.getDate();
             defer allocator.free(dt);
             log.err("{s} => route err {}", .{ dt, err });
-            response.toJson("error") catch |e| {
-                defer allocator.free(dt);
-                log.err("{s} => toJson err {}", .{ dt, e });
-                response.deinit();
-                continue;
-            };
-            response.deinit();
             continue;
         };
-        defer response.deinit();
     }
 }
 
